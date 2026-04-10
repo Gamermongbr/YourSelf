@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Home, LayoutGrid, BarChart2, User, ChevronDown, Activity, Brain, Scale, Calendar, Clock, Flower2, BookOpen, BicepsFlexed, Dumbbell, Target, Flag, Trophy, Book, FileText, GraduationCap, UserCircle, Pencil, TrendingUp, CalendarDays, AlertCircle, ArrowUpFromLine, Quote, BookOpenText, Paperclip, Plus, Compass, Smile, Meh, Frown, PenLine } from 'lucide-react';
+import { Search, Home, LayoutGrid, BarChart2, User, ChevronDown, Activity, Brain, Scale, Calendar, Clock, Flower2, BookOpen, BicepsFlexed, Dumbbell, Target, Flag, Trophy, Book, FileText, GraduationCap, UserCircle, Pencil, TrendingUp, CalendarDays, AlertCircle, ArrowUpFromLine, Quote, BookOpenText, Paperclip, Plus, Compass, Smile, Meh, Frown, PenLine, Accessibility, Zap, Timer, StretchHorizontal, MousePointerClick, Flame, Eye, Utensils, Swords, Music, Radio, Youtube, Instagram } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -585,7 +585,7 @@ export default function App() {
             </div>
 
             {/* Learning Hub Section */}
-            <div className="mb-8">
+            <div className="mb-10">
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-gradient-to-br from-[#1E1B4B] to-[#312E81] rounded-3xl p-6 shadow-xl shadow-indigo-200/50 relative overflow-hidden cursor-pointer group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl transform translate-x-1/3 -translate-y-1/3"></div>
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/20 rounded-full blur-xl transform -translate-x-1/3 translate-y-1/3"></div>
@@ -605,6 +605,132 @@ export default function App() {
                   </div>
                 </div>
               </motion.div>
+            </div>
+
+            {/* Training Guidance Section */}
+            <div className="mb-12">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold">Training guidance</h3>
+                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Expert Tips</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { title: 'Body Posture', icon: Accessibility, color: 'bg-emerald-50', iconColor: 'text-emerald-600', desc: 'Alignment' },
+                  { title: 'Eye Care', icon: Eye, color: 'bg-cyan-50', iconColor: 'text-cyan-600', desc: 'Vision' },
+                  { title: 'Weight Gain', icon: TrendingUp, color: 'bg-indigo-50', iconColor: 'text-indigo-600', desc: 'Mass' },
+                  { title: 'Food Diet', icon: Utensils, color: 'bg-lime-50', iconColor: 'text-lime-600', desc: 'Nutrition' },
+                  { title: 'Speed', icon: Zap, color: 'bg-yellow-50', iconColor: 'text-yellow-600', desc: 'Velocity' },
+                  { title: 'Endurance', icon: Timer, color: 'bg-blue-50', iconColor: 'text-blue-600', desc: 'Stamina' },
+                  { title: 'Flexibility', icon: StretchHorizontal, color: 'bg-rose-50', iconColor: 'text-rose-600', desc: 'Mobility' },
+                  { title: 'Reaction Reflex', icon: MousePointerClick, color: 'bg-purple-50', iconColor: 'text-purple-600', desc: 'Agility' },
+                  { title: 'Calisthenics', icon: BicepsFlexed, color: 'bg-orange-50', iconColor: 'text-orange-600', desc: 'Bodyweight' },
+                  { title: 'Muscle Strength', icon: Flame, color: 'bg-red-50', iconColor: 'text-red-600', desc: 'Power' },
+                ].map((item, i) => (
+                  <motion.div 
+                    key={i}
+                    whileHover={{ scale: 1.02, y: -4 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="p-5 rounded-[2rem] bg-white border border-gray-100 shadow-sm flex flex-col gap-4 cursor-pointer group transition-all hover:shadow-md hover:border-gray-200"
+                  >
+                    <div className={`w-12 h-12 rounded-2xl ${item.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                      <item.icon className={`w-6 h-6 ${item.iconColor}`} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-sm">{item.title}</h4>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{item.desc}</p>
+                    </div>
+                  </motion.div>
+                ))}
+                
+                {/* Martial Techniques Header */}
+                <div className="col-span-2 mt-4 mb-2 px-2">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Martial techniques</h4>
+                </div>
+
+                {/* Martial Book Special Card */}
+                <motion.div 
+                  whileHover={{ scale: 1.02, y: -4 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="col-span-2 p-5 rounded-[2rem] bg-[#1A1A24] text-white shadow-sm flex flex-row items-center gap-4 cursor-pointer group transition-all hover:shadow-md border-none"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Swords className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex flex-col">
+                    <h4 className="font-bold text-sm text-white">Martial Book</h4>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Combat Arts</p>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Social Section */}
+            <div className="mb-12">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold">Social</h3>
+                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Connect</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Discover - Large Card */}
+                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="col-span-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] p-6 text-white relative overflow-hidden cursor-pointer shadow-lg shadow-blue-100">
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xl font-bold mb-1">Discover</h4>
+                      <p className="text-blue-100 text-xs">Explore new trends</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
+                      <Compass className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+                </motion.div>
+
+                {/* Music */}
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100 flex flex-col gap-4 cursor-pointer group">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Music className="w-6 h-6 text-rose-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm">Music</h4>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Playlists</p>
+                  </div>
+                </motion.div>
+
+                {/* Radio */}
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100 flex flex-col gap-4 cursor-pointer group">
+                  <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Radio className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm">Radio</h4>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Live FM</p>
+                  </div>
+                </motion.div>
+
+                {/* YouTube */}
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100 flex flex-col gap-4 cursor-pointer group">
+                  <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Youtube className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm">YouTube</h4>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Videos</p>
+                  </div>
+                </motion.div>
+
+                {/* Instagram */}
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-white rounded-[2rem] p-5 shadow-sm border border-gray-100 flex flex-col gap-4 cursor-pointer group">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Instagram className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm">Instagram</h4>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Feed</p>
+                  </div>
+                </motion.div>
+              </div>
             </div>
           </motion.div>
         )}
