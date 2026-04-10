@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Home, LayoutGrid, BarChart2, User, ChevronDown, Activity, Brain, Scale, Calendar, Clock, Flower2, BookOpen, BicepsFlexed, Dumbbell, Target, Flag, Trophy, Book, FileText, GraduationCap, UserCircle, Pencil, TrendingUp, CalendarDays, AlertCircle, ArrowUpFromLine, Quote, BookOpenText, Paperclip, Plus, Compass, Smile, Meh, Frown, PenLine, Accessibility, Zap, Timer, StretchHorizontal, MousePointerClick, Flame, Eye, Utensils, Swords, Music, Radio, Youtube, Instagram, ArrowLeft, Play, RotateCcw, Settings2, CheckCircle2 } from 'lucide-react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -1239,6 +1240,7 @@ export default function App() {
   )}
 </AnimatePresence>
 
+    <SpeedInsights />
     </div>
   );
 }
