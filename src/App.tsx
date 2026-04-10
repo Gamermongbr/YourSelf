@@ -5,19 +5,110 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Home, LayoutGrid, BarChart2, User, ChevronDown, Activity, Brain, Scale, Calendar, Clock, Flower2, BookOpen, BicepsFlexed, Dumbbell, Target, Flag, Trophy, Book, FileText, GraduationCap, UserCircle, Pencil, TrendingUp, CalendarDays, AlertCircle, ArrowUpFromLine, Quote, BookOpenText, Paperclip, Plus, Compass, Smile, Meh, Frown, PenLine, Accessibility, Zap, Timer, StretchHorizontal, MousePointerClick, Flame, Eye, Utensils, Swords, Music, Radio, Youtube, Instagram } from 'lucide-react';
+import { Search, Home, LayoutGrid, BarChart2, User, ChevronDown, Activity, Brain, Scale, Calendar, Clock, Flower2, BookOpen, BicepsFlexed, Dumbbell, Target, Flag, Trophy, Book, FileText, GraduationCap, UserCircle, Pencil, TrendingUp, CalendarDays, AlertCircle, ArrowUpFromLine, Quote, BookOpenText, Paperclip, Plus, Compass, Smile, Meh, Frown, PenLine, Accessibility, Zap, Timer, StretchHorizontal, MousePointerClick, Flame, Eye, Utensils, Swords, Music, Radio, Youtube, Instagram, ArrowLeft, Play, RotateCcw, Settings2, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
+  const [currentView, setCurrentView] = useState('dashboard');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isCycleExpanded, setIsCycleExpanded] = useState(false);
   const [isNotebookExpanded, setIsNotebookExpanded] = useState(false);
+
+  // Pushup Counter States
+  const [pushupMode, setPushupMode] = useState<'free' | 'continuous' | 'step'>('continuous');
+  const [targetPushups, setTargetPushups] = useState(15);
+  const [pushupsPerSet, setPushupsPerSet] = useState(10);
+  const [restTime, setRestTime] = useState(30);
+  const [currentPushups, setCurrentPushups] = useState(0);
+  const [isTraining, setIsTraining] = useState(false);
+  const [isResting, setIsResting] = useState(false);
+  const [restTimeRemaining, setRestTimeRemaining] = useState(0);
+  const [setsCompleted, setSetsCompleted] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // PWA Install States
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+
+  // Capture the install prompt
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setInstallPrompt(null);
+      }
+    } else {
+      setShowInstallModal(true);
+    }
+  };
 
   // Update date every second for real-time clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentDate(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Rest Timer Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isResting && restTimeRemaining > 0) {
+      interval = setInterval(() => {
+        setRestTimeRemaining((prev) => prev - 1);
+      }, 1000);
+    } else if (restTimeRemaining === 0 && isResting) {
+      setIsResting(false);
+    }
+    return () => clearInterval(interval);
+  }, [isResting, restTimeRemaining]);
+
+  const handlePushupClick = () => {
+    if (!isTraining || isResting) return;
+
+    if (pushupMode === 'free') {
+      setCurrentPushups(prev => prev + 1);
+    } else {
+      if (currentPushups > 0) {
+        const nextCount = currentPushups - 1;
+        setCurrentPushups(nextCount);
+
+        // Step mode logic
+        if (pushupMode === 'step') {
+          const totalDone = targetPushups - nextCount;
+          if (totalDone % pushupsPerSet === 0 && nextCount > 0) {
+            setIsResting(true);
+            setRestTimeRemaining(restTime);
+          }
+        }
+
+        if (nextCount === 0) {
+          setIsTraining(false);
+        }
+      }
+    }
+  };
+
+  const startTraining = () => {
+    setCurrentPushups(pushupMode === 'free' ? 0 : targetPushups);
+    setIsTraining(true);
+    setIsResting(false);
+    setSetsCompleted(0);
+  };
+
+  const resetTraining = () => {
+    setIsTraining(false);
+    setIsResting(false);
+    setCurrentPushups(0);
+  };
 
   const formattedDate = `Today ${currentDate.getDate()} ${currentDate.toLocaleString('default', { month: 'short' })}.`;
 
@@ -34,8 +125,16 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F3F2FA] font-sans text-gray-900 relative pb-32 overflow-x-hidden">
-      {/* Top Bar */}
-      <header className="flex items-center justify-between px-6 pt-12 pb-4 max-w-2xl mx-auto">
+      <AnimatePresence mode="wait">
+        {currentView === 'dashboard' ? (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Top Bar */}
+            <header className="flex items-center justify-between px-6 pt-12 pb-4 max-w-2xl mx-auto">
         <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0">
           <img 
             src="https://picsum.photos/seed/sandra/100/100" 
@@ -48,8 +147,15 @@ export default function App() {
           <h1 className="text-lg font-semibold tracking-tight truncate">Hello, Sandra</h1>
           <p className="text-xs text-gray-500 font-medium">{formattedDate}</p>
         </div>
-        <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors shrink-0">
+        <button 
+          onClick={handleInstallClick}
+          className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors shrink-0 relative group"
+        >
           <Search className="w-5 h-5 text-gray-600" />
+          {/* Tooltip for clarity */}
+          <div className="absolute -bottom-8 right-0 bg-gray-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            Install App
+          </div>
         </button>
       </header>
 
@@ -458,7 +564,12 @@ export default function App() {
             </motion.div>
 
             {/* Push Up Counter */}
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="bg-[#C1F0D0] rounded-3xl p-4 shadow-sm flex flex-col gap-3 cursor-pointer">
+            <motion.div 
+              whileHover={{ scale: 1.02 }} 
+              whileTap={{ scale: 0.98 }} 
+              onClick={() => setCurrentView('pushups')}
+              className="bg-[#C1F0D0] rounded-3xl p-4 shadow-sm flex flex-col gap-3 cursor-pointer"
+            >
               <div className="w-10 h-10 rounded-full bg-white/50 flex items-center justify-center shrink-0">
                 <BicepsFlexed className="w-5 h-5 text-emerald-600" />
               </div>
@@ -746,16 +857,22 @@ export default function App() {
           className="bg-[#1A1A24] rounded-[2rem] p-2 flex items-center justify-between shadow-2xl shadow-black/20"
         >
           <button 
-            onClick={() => setActiveTab('home')}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${activeTab === 'home' ? 'bg-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+            onClick={() => {
+              setActiveTab('home');
+              setCurrentView('dashboard');
+            }}
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${activeTab === 'home' && currentView === 'dashboard' ? 'bg-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
           >
-            <Home className={`w-6 h-6 ${activeTab === 'home' ? 'text-[#1A1A24]' : ''}`} />
+            <Home className={`w-6 h-6 ${activeTab === 'home' && currentView === 'dashboard' ? 'text-[#1A1A24]' : ''}`} />
           </button>
           <button 
-            onClick={() => setActiveTab('grid')}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${activeTab === 'grid' ? 'bg-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+            onClick={() => {
+              setActiveTab('grid');
+              setCurrentView('dashboard');
+            }}
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${activeTab === 'grid' && currentView === 'dashboard' ? 'bg-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
           >
-            <LayoutGrid className={`w-6 h-6 ${activeTab === 'grid' ? 'text-[#1A1A24]' : ''}`} />
+            <LayoutGrid className={`w-6 h-6 ${activeTab === 'grid' && currentView === 'dashboard' ? 'text-[#1A1A24]' : ''}`} />
           </button>
           <button className="w-14 h-14 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
             <BarChart2 className="w-6 h-6" />
@@ -765,6 +882,362 @@ export default function App() {
           </button>
         </motion.div>
       </div>
+
+      {/* Install Modal Fallback */}
+      <AnimatePresence>
+        {showInstallModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowInstallModal(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <ArrowUpFromLine className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-black text-center mb-2">Install App</h3>
+              <p className="text-gray-500 text-center text-sm mb-8 leading-relaxed">
+                To install this app natively on your device:
+                <br/><br/>
+                <span className="font-bold text-gray-900">iOS (Safari):</span> Tap the <span className="font-bold">Share</span> icon at the bottom, then select <span className="font-bold">"Add to Home Screen"</span>.
+                <br/><br/>
+                <span className="font-bold text-gray-900">Android (Chrome):</span> Tap the <span className="font-bold">Menu</span> (⋮) and select <span className="font-bold">"Add to Home screen"</span>.
+              </p>
+              <button 
+                onClick={() => setShowInstallModal(false)}
+                className="w-full py-4 bg-[#1A1A24] text-white rounded-2xl font-bold hover:bg-black transition-colors"
+              >
+                Got it
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  ) : (
+    <motion.div
+      key="pushups"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.05 }}
+      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      className={`min-h-screen transition-colors duration-700 ${isTraining ? 'bg-[#0A0A0F]' : 'bg-[#F3F2FA]'} p-6 max-w-2xl mx-auto relative overflow-hidden`}
+    >
+      {/* Decorative Background Elements for Dark Mode */}
+      <AnimatePresence>
+        {isTraining && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none"
+            />
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"
+            />
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Pushups Page Header */}
+      <div className="flex items-center justify-between mb-8 pt-6 relative z-10">
+        <button 
+          onClick={() => {
+            if (isTraining) {
+              resetTraining();
+            } else {
+              setCurrentView('dashboard');
+            }
+          }}
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isTraining ? 'bg-white/5 text-white border border-white/10 backdrop-blur-md' : 'bg-white shadow-sm text-gray-600 border border-gray-100'}`}
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <h2 className={`text-xl font-black tracking-tight transition-colors duration-500 ${isTraining ? 'text-white' : 'text-gray-900'}`}>
+          {isTraining ? 'Training Session' : 'Push Up Counter'}
+        </h2>
+        <button 
+          onClick={() => setShowSettings(!showSettings)}
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isTraining ? 'bg-white/5 text-white border border-white/10 backdrop-blur-md opacity-50' : 'bg-white shadow-sm text-gray-600 border border-gray-100'}`}
+          disabled={isTraining}
+        >
+          <Settings2 className="w-6 h-6" />
+        </button>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {!isTraining ? (
+          <motion.div
+            key="settings"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4 }}
+            className="space-y-8 relative z-10"
+          >
+            {/* Pushup Man Logo Area */}
+            <div className="flex flex-col items-center justify-center mb-4">
+              <motion.div 
+                layoutId="logo-container"
+                className="w-24 h-24 rounded-[2.5rem] bg-emerald-100 flex items-center justify-center shadow-inner mb-4"
+              >
+                <BicepsFlexed className="w-12 h-12 text-emerald-600" />
+              </motion.div>
+              <p className="text-gray-500 font-bold text-center px-8 text-sm uppercase tracking-widest">
+                Set your goal
+              </p>
+            </div>
+
+            {/* Mode Selection */}
+            <div className="bg-white rounded-[2.5rem] p-1.5 flex relative shadow-sm border border-gray-100 overflow-hidden">
+              <motion.div
+                layoutId="mode-bg"
+                className="absolute top-1.5 bottom-1.5 bg-[#1A1A24] rounded-2xl shadow-lg"
+                initial={false}
+                animate={{
+                  left: pushupMode === 'continuous' ? '6px' : pushupMode === 'step' ? 'calc(33.33% + 2px)' : 'calc(66.66% + 2px)',
+                  width: 'calc(33.33% - 8px)'
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+              {(['continuous', 'step', 'free'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setPushupMode(m)}
+                  className={`flex-1 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors relative z-10 ${pushupMode === m ? 'text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
+            <motion.div layout className="space-y-6">
+              <AnimatePresence mode="popLayout">
+                {pushupMode !== 'free' && (
+                  <motion.div
+                    key="presets-and-inputs"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="space-y-6"
+                  >
+                    {/* Presets */}
+                    <div className="grid grid-cols-4 gap-3">
+                      {[10, 15, 20, 30].map((num) => (
+                        <button
+                          key={num}
+                          onClick={() => setTargetPushups(num)}
+                          className={`py-4 rounded-3xl font-black transition-all ${targetPushups === num ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-200' : 'bg-white text-gray-600 border border-gray-100'}`}
+                        >
+                          {num}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Manual Input & Step Settings */}
+                    <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-gray-400 uppercase tracking-widest text-[10px]">Target Goal</span>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setTargetPushups(Math.max(1, targetPushups - 1))} className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">-</button>
+                          <input 
+                            type="number"
+                            value={targetPushups}
+                            onChange={(e) => setTargetPushups(parseInt(e.target.value) || 0)}
+                            className="text-2xl font-black w-14 text-center tabular-nums bg-transparent border-none focus:ring-0 p-0"
+                          />
+                          <button onClick={() => setTargetPushups(targetPushups + 1)} className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">+</button>
+                        </div>
+                      </div>
+
+                      <AnimatePresence>
+                        {pushupMode === 'step' && (
+                          <motion.div 
+                            initial={{ opacity: 0, height: 0 }} 
+                            animate={{ opacity: 1, height: 'auto' }} 
+                            exit={{ opacity: 0, height: 0 }}
+                            className="space-y-6 pt-6 border-t border-gray-50 overflow-hidden"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-black text-gray-400 uppercase tracking-widest text-[10px]">Pushups per Set</span>
+                              <div className="flex items-center gap-3">
+                                <button onClick={() => setPushupsPerSet(Math.max(1, pushupsPerSet - 1))} className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-600">-</button>
+                                <input 
+                                  type="number"
+                                  value={pushupsPerSet}
+                                  onChange={(e) => setPushupsPerSet(parseInt(e.target.value) || 0)}
+                                  className="text-2xl font-black w-14 text-center tabular-nums bg-transparent border-none focus:ring-0 p-0"
+                                />
+                                <button onClick={() => setPushupsPerSet(pushupsPerSet + 1)} className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-600">+</button>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="font-black text-gray-400 uppercase tracking-widest text-[10px]">Rest Duration</span>
+                              <div className="flex items-center gap-3">
+                                <button onClick={() => setRestTime(Math.max(5, restTime - 5))} className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-600">-</button>
+                                <div className="flex items-center justify-center w-14">
+                                  <input 
+                                    type="number"
+                                    value={restTime}
+                                    onChange={(e) => setRestTime(parseInt(e.target.value) || 0)}
+                                    className="text-2xl font-black w-10 text-center tabular-nums bg-transparent border-none focus:ring-0 p-0"
+                                  />
+                                  <span className="text-sm font-black text-gray-300 ml-0.5">s</span>
+                                </div>
+                                <button onClick={() => setRestTime(restTime + 5)} className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-600">+</button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            <motion.button 
+              layout
+              onClick={startTraining}
+              className="w-full py-6 bg-emerald-500 rounded-[2.5rem] text-white font-black text-xl shadow-2xl shadow-emerald-200/50 flex items-center justify-center gap-3 hover:bg-emerald-600 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Play className="w-6 h-6 fill-current" />
+              START SESSION
+            </motion.button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="training"
+            initial={{ opacity: 0, scale: 0.8, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 1.2, y: -30 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="flex flex-col items-center justify-center gap-12 relative z-10"
+          >
+            {/* Session Info */}
+            <div className="text-center">
+              <p className="text-emerald-400 font-black uppercase tracking-[0.2em] text-[10px] mb-2">
+                {pushupMode} mode
+              </p>
+              {pushupMode === 'step' && (
+                <p className="text-white/40 font-bold text-xs uppercase tracking-widest">
+                  Set {setsCompleted + 1} of {Math.ceil(targetPushups / pushupsPerSet)}
+                </p>
+              )}
+            </div>
+
+            {/* Big Circular Counter - Premium Dark Mode */}
+            <div className="relative w-80 h-80">
+              {/* Outer Glow Ring */}
+              <div className={`absolute inset-0 rounded-full blur-3xl transition-colors duration-1000 ${isResting ? 'bg-amber-500/20' : 'bg-emerald-500/20'}`} />
+              
+              {/* Background Ring */}
+              <svg className="w-full h-full -rotate-90 drop-shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                <circle
+                  cx="160"
+                  cy="160"
+                  r="145"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.05)"
+                  strokeWidth="16"
+                />
+                <motion.circle
+                  cx="160"
+                  cy="160"
+                  r="145"
+                  fill="none"
+                  stroke={isResting ? "#F59E0B" : "#10B981"}
+                  strokeWidth="16"
+                  strokeLinecap="round"
+                  initial={{ pathLength: 0 }}
+                  animate={{ 
+                    pathLength: isResting 
+                      ? restTimeRemaining / restTime 
+                      : pushupMode === 'free' ? 1 : currentPushups / targetPushups 
+                  }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+              </svg>
+
+              {/* Counter Content - Glassmorphism */}
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={handlePushupClick}
+                disabled={isResting}
+                className={`absolute inset-6 rounded-full flex flex-col items-center justify-center transition-all duration-500 border border-white/10 backdrop-blur-2xl shadow-2xl ${isResting ? 'bg-amber-500/5' : 'bg-white/5 hover:bg-white/10'}`}
+              >
+                <AnimatePresence mode="wait">
+                  {isResting ? (
+                    <motion.div
+                      key="rest"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 1.5 }}
+                      className="flex flex-col items-center"
+                    >
+                      <Timer className="w-12 h-12 text-amber-500 mb-4 animate-pulse" />
+                      <span className="text-6xl font-black text-white tabular-nums tracking-tighter">{restTimeRemaining}s</span>
+                      <span className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] mt-4">Resting</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="count"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 1.5 }}
+                      className="flex flex-col items-center"
+                    >
+                      <span className="text-9xl font-black text-white leading-none tracking-tighter tabular-nums drop-shadow-2xl">
+                        {currentPushups}
+                      </span>
+                      <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mt-6">
+                        {pushupMode === 'free' ? 'Pushups Done' : 'Remaining'}
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            </div>
+
+            {/* Controls */}
+            <div className="flex gap-4 w-full px-10">
+              <button 
+                onClick={resetTraining}
+                className="flex-1 py-4 bg-white/5 rounded-2xl text-white/60 font-black text-[10px] uppercase tracking-[0.2em] border border-white/10 backdrop-blur-md flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Stop
+              </button>
+              {currentPushups === 0 && pushupMode !== 'free' && (
+                <motion.div initial={{ scale: 0, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} className="flex-1">
+                  <button 
+                    onClick={() => setCurrentView('dashboard')}
+                    className="w-full py-4 bg-emerald-500 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-emerald-500/30 flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Finish
+                  </button>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )}
+</AnimatePresence>
 
     </div>
   );
