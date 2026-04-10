@@ -1,0 +1,17 @@
+{
+  "name": "Fitness Tracker",
+  "short_name": "Fitness",
+  "description": "Your personal fitness and health tracker.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3F2FA",
+  "theme_color": "#1A1A24",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

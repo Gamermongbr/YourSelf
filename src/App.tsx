@@ -905,11 +905,13 @@ export default function App() {
               </div>
               <h3 className="text-2xl font-black text-center mb-2">Install App</h3>
               <p className="text-gray-500 text-center text-sm mb-8 leading-relaxed">
-                To install this app natively on your device:
+                <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md text-xs font-bold mb-4 inline-block">Preview Limitation</span>
+                <br/>
+                Because you are viewing this inside the AI Studio preview window, the automatic install prompt is blocked by your browser.
                 <br/><br/>
-                <span className="font-bold text-gray-900">iOS (Safari):</span> Tap the <span className="font-bold">Share</span> icon at the bottom, then select <span className="font-bold">"Add to Home Screen"</span>.
+                <span className="font-bold text-gray-900">Step 1:</span> Click the <span className="font-bold">"Open in new tab"</span> button (usually at the top right of the preview window).
                 <br/><br/>
-                <span className="font-bold text-gray-900">Android (Chrome):</span> Tap the <span className="font-bold">Menu</span> (⋮) and select <span className="font-bold">"Add to Home screen"</span>.
+                <span className="font-bold text-gray-900">Step 2:</span> Once opened in a new tab, tap the <span className="font-bold">Share</span> icon (iOS) or <span className="font-bold">Menu</span> (Android) and select <span className="font-bold">"Add to Home Screen"</span>.
               </p>
               <button 
                 onClick={() => setShowInstallModal(false)}
