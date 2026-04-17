@@ -3,9 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Home, LayoutGrid, BarChart2, User, ChevronDown, Activity, Brain, Scale, Calendar, Clock, Flower2, BookOpen, BicepsFlexed, Dumbbell, Target, Flag, Trophy, Book, FileText, GraduationCap, UserCircle, Pencil, TrendingUp, CalendarDays, AlertCircle, ArrowUpFromLine, Quote, BookOpenText, Paperclip, Plus, Compass, Smile, Meh, Frown, PenLine, Accessibility, Zap, Timer, StretchHorizontal, MousePointerClick, Flame, Eye, Utensils, Swords, Music, Radio, Youtube, Instagram, ArrowLeft, Play, RotateCcw, Settings2, CheckCircle2 } from 'lucide-react';
+import { Search, Home, LayoutGrid, BarChart2, User, ChevronDown, Activity, Brain, Scale, Calendar, Clock, Flower2, BookOpen, BicepsFlexed, Dumbbell, Target, Flag, Trophy, Book, FileText, GraduationCap, UserCircle, Pencil, TrendingUp, CalendarDays, AlertCircle, ArrowUpFromLine, Quote, BookOpenText, Paperclip, Plus, Compass, Smile, Meh, Frown, PenLine, Accessibility, Zap, Timer, StretchHorizontal, MousePointerClick, Flame, Eye, Utensils, Swords, Music, Radio, Youtube, Instagram, ArrowLeft, Play, RotateCcw, Settings2, CheckCircle2, Camera, CameraOff, Sparkles } from 'lucide-react';
+import { Pose, Results, POSE_CONNECTIONS } from '@mediapipe/pose';
+import { Camera as MediaPipeCamera } from '@mediapipe/camera_utils';
+import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -25,6 +28,14 @@ export default function App() {
   const [restTimeRemaining, setRestTimeRemaining] = useState(0);
   const [setsCompleted, setSetsCompleted] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [aiCameraEnabled, setAiCameraEnabled] = useState(false);
+
+  // AI Tracking Refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const poseRef = useRef<Pose | null>(null);
+  const isDownRef = useRef(false);
+  const lastAngleRef = useRef(0);
 
   // PWA Install States
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -102,7 +113,105 @@ export default function App() {
     setIsTraining(true);
     setIsResting(false);
     setSetsCompleted(0);
+    isDownRef.current = false; // Reset AI state
   };
+
+  const calculateAngle = (a: any, b: any, c: any) => {
+    if (!a || !b || !c) return 180;
+    const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+    let angle = Math.abs((radians * 180.0) / Math.PI);
+    if (angle > 180.0) angle = 360 - angle;
+    return angle;
+  };
+
+  // AI Camera Logic
+  useEffect(() => {
+    if (!isTraining || !aiCameraEnabled || !videoRef.current || !canvasRef.current) return;
+
+    let camera: MediaPipeCamera | null = null;
+    let pose: Pose | null = null;
+
+    const setupPose = async () => {
+      pose = new Pose({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+      });
+
+      pose.setOptions({
+        modelComplexity: 1,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+
+      pose.onResults((results: Results) => {
+        if (!canvasRef.current) return;
+        const canvasCtx = canvasRef.current.getContext('2d');
+        if (!canvasCtx) return;
+
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
+        // Draw camera feed if needed, but here we just draw the skeleton over the background or mirrored
+        // Actually, we usually draw the image then the landmarks
+        canvasCtx.drawImage(results.image, 0, 0, canvasRef.current.width, canvasRef.current.height);
+
+        if (results.poseLandmarks) {
+          // Draw 3D-like geometry
+          drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#10B981', lineWidth: 4 });
+          drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FFFFFF', lineWidth: 2, radius: 4 });
+
+          // Calculate pushup logic
+          // Points: 11 (left shoulder), 13 (left elbow), 15 (left wrist)
+          // OR 12 (right shoulder), 14 (right elbow), 16 (right wrist)
+          const leftElbowAngle = calculateAngle(
+            results.poseLandmarks[11],
+            results.poseLandmarks[13],
+            results.poseLandmarks[15]
+          );
+          const rightElbowAngle = calculateAngle(
+            results.poseLandmarks[12],
+            results.poseLandmarks[14],
+            results.poseLandmarks[16]
+          );
+
+          const avgAngle = (leftElbowAngle + rightElbowAngle) / 2;
+          lastAngleRef.current = avgAngle;
+
+          // Pushup Thresholds
+          // Down: Angle < 90
+          // Up: Angle > 160
+          if (avgAngle < 90 && !isDownRef.current) {
+            isDownRef.current = true;
+          } else if (avgAngle > 160 && isDownRef.current) {
+            isDownRef.current = false;
+            handlePushupClick();
+          }
+        }
+        canvasCtx.restore();
+      });
+
+      if (videoRef.current) {
+        camera = new MediaPipeCamera(videoRef.current, {
+          onFrame: async () => {
+            if (videoRef.current && pose) {
+              await pose.send({ image: videoRef.current });
+            }
+          },
+          width: 640,
+          height: 480,
+        });
+        await camera.start();
+      }
+    };
+
+    setupPose();
+
+    return () => {
+      if (camera) camera.stop();
+      if (pose) pose.close();
+    };
+  }, [isTraining, aiCameraEnabled]);
 
   const resetTraining = () => {
     setIsTraining(false);
@@ -1025,6 +1134,48 @@ export default function App() {
               ))}
             </div>
 
+            {/* AI Camera Toggle Card */}
+            <motion.div 
+              layout
+              className={`rounded-[2.5rem] p-6 border transition-all duration-500 overflow-hidden ${aiCameraEnabled ? 'bg-emerald-500 border-emerald-400 shadow-xl shadow-emerald-200' : 'bg-white border-gray-100'}`}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${aiCameraEnabled ? 'bg-white/20' : 'bg-gray-50'}`}>
+                    {aiCameraEnabled ? <Sparkles className="w-6 h-6 text-white" /> : <Camera className="w-6 h-6 text-gray-400" />}
+                  </div>
+                  <div>
+                    <h4 className={`font-black text-sm uppercase tracking-widest ${aiCameraEnabled ? 'text-white' : 'text-gray-900'}`}>AI Camera Tracking</h4>
+                    <p className={`text-[10px] font-bold uppercase tracking-tight ${aiCameraEnabled ? 'text-white/70' : 'text-gray-400'}`}>
+                      {aiCameraEnabled ? 'Motion detection active' : 'Count pushups automatically'}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setAiCameraEnabled(!aiCameraEnabled)}
+                  className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${aiCameraEnabled ? 'bg-white text-emerald-500 shadow-lg' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}`}
+                >
+                  {aiCameraEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              
+              <AnimatePresence>
+                {aiCameraEnabled && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-6 pt-6 border-t border-white/20"
+                  >
+                    <p className="text-[10px] font-bold text-white/80 leading-relaxed uppercase tracking-widest">
+                      Place your phone on the floor or lean it against a wall. Make sure your full body is visible in the frame.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+
             <motion.div layout className="space-y-6">
               <AnimatePresence mode="popLayout">
                 {pushupMode !== 'free' && (
@@ -1131,7 +1282,7 @@ export default function App() {
             {/* Session Info */}
             <div className="text-center">
               <p className="text-emerald-400 font-black uppercase tracking-[0.2em] text-[10px] mb-2">
-                {pushupMode} mode
+                {aiCameraEnabled ? 'AI Vision' : pushupMode} mode
               </p>
               {pushupMode === 'step' && (
                 <p className="text-white/40 font-bold text-xs uppercase tracking-widest">
@@ -1140,13 +1291,39 @@ export default function App() {
               )}
             </div>
 
+            {/* AI Camera Feed */}
+            {aiCameraEnabled && (
+              <div className="relative w-full max-w-sm aspect-[3/4] rounded-[3rem] overflow-hidden bg-black/40 border border-white/10 shadow-2xl group">
+                <video ref={videoRef} className="hidden" playsInline muted />
+                <canvas 
+                  ref={canvasRef} 
+                  width={640} 
+                  height={853} 
+                  className="w-full h-full object-cover rounded-[3rem] opacity-80"
+                />
+                <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-widest">AI Vision Active</span>
+                </div>
+                {/* Calibration Guide */}
+                <div className="absolute inset-x-8 bottom-8 text-center pointer-events-none">
+                  <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] group-hover:text-white/80 transition-colors">
+                    Position your full body in frame
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Big Circular Counter - Premium Dark Mode */}
-            <div className="relative w-80 h-80">
+            <div className={`relative transition-all duration-500 ${aiCameraEnabled ? 'w-56 h-56 -mt-16' : 'w-80 h-80'}`}>
               {/* Outer Glow Ring */}
               <div className={`absolute inset-0 rounded-full blur-3xl transition-colors duration-1000 ${isResting ? 'bg-amber-500/20' : 'bg-emerald-500/20'}`} />
               
               {/* Background Ring */}
-              <svg className="w-full h-full -rotate-90 drop-shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+              <svg 
+                viewBox="0 0 320 320"
+                className="w-full h-full -rotate-90 drop-shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+              >
                 <circle
                   cx="160"
                   cy="160"
@@ -1178,7 +1355,7 @@ export default function App() {
                 whileTap={{ scale: 0.96 }}
                 onClick={handlePushupClick}
                 disabled={isResting}
-                className={`absolute inset-6 rounded-full flex flex-col items-center justify-center transition-all duration-500 border border-white/10 backdrop-blur-2xl shadow-2xl ${isResting ? 'bg-amber-500/5' : 'bg-white/5 hover:bg-white/10'}`}
+                className={`absolute inset-4 rounded-full flex flex-col items-center justify-center transition-all duration-500 border border-white/10 backdrop-blur-2xl shadow-2xl ${isResting ? 'bg-amber-500/5' : 'bg-white/5 hover:bg-white/10'}`}
               >
                 <AnimatePresence mode="wait">
                   {isResting ? (
@@ -1189,9 +1366,9 @@ export default function App() {
                       exit={{ opacity: 0, scale: 1.5 }}
                       className="flex flex-col items-center"
                     >
-                      <Timer className="w-12 h-12 text-amber-500 mb-4 animate-pulse" />
-                      <span className="text-6xl font-black text-white tabular-nums tracking-tighter">{restTimeRemaining}s</span>
-                      <span className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] mt-4">Resting</span>
+                      <Timer className={`${aiCameraEnabled ? 'w-6 h-6' : 'w-12 h-12'} text-amber-500 mb-2 animate-pulse`} />
+                      <span className={`${aiCameraEnabled ? 'text-4xl' : 'text-6xl'} font-black text-white tabular-nums tracking-tighter`}>{restTimeRemaining}s</span>
+                      <span className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] mt-2">Resting</span>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -1201,10 +1378,10 @@ export default function App() {
                       exit={{ opacity: 0, scale: 1.5 }}
                       className="flex flex-col items-center"
                     >
-                      <span className="text-9xl font-black text-white leading-none tracking-tighter tabular-nums drop-shadow-2xl">
+                      <span className={`${aiCameraEnabled ? 'text-6xl' : 'text-9xl'} font-black text-white leading-none tracking-tighter tabular-nums drop-shadow-2xl`}>
                         {currentPushups}
                       </span>
-                      <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mt-6">
+                      <span className={`font-black text-white/40 uppercase tracking-[0.4em] ${aiCameraEnabled ? 'text-[8px] mt-2' : 'text-[10px] mt-6'}`}>
                         {pushupMode === 'free' ? 'Pushups Done' : 'Remaining'}
                       </span>
                     </motion.div>
